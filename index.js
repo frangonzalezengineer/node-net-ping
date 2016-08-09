@@ -17,6 +17,18 @@ var NetworkProtocol = {
 	2: "IPv6"
 };
 
+/**
+ * Returns milliseconds with decimal places suitable for time delta calculations down to nanoseconds (e.g. 48084920.510752).
+ * Note that this number is based on an unpredictable, arbitrary start time, so there is no accurate conversion
+ * to clock time. The results should be used strictly for calculating elapsed time with high resolution.
+ *
+ * @return {Number} milliseconds
+ */
+function deltaMs () {
+    var now = process.hrtime ();
+    return (now[0] * 1e9 + now[1]) / 1000 / 1000;
+}
+
 _expandConstantObject (NetworkProtocol);
 
 function DestinationUnreachableError (source) {
@@ -125,8 +137,8 @@ Session.prototype._debugResponse = function (source, buffer) {
 Session.prototype.flush = function (error) {
 	for (id in this.reqs) {
 		var req = this.reqRemove (id);
-		var sent = req.sent ? req.sent : new Date ();
-		req.callback (error, req.target, sent, new Date ());
+		var sent = req.sent ? req.sent : deltaMs ();
+		req.callback (error, req.target, sent, deltaMs ());
 	}
 };
 
@@ -275,44 +287,44 @@ Session.prototype.onSocketMessage = function (buffer, source) {
 		if (this.addressFamily == raw.AddressFamily.IPv6) {
 			if (req.type == 1) {
 				req.callback (new DestinationUnreachableError (source), req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			} else if (req.type == 2) {
 				req.callback (new PacketTooBigError (source), req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			} else if (req.type == 3) {
 				req.callback (new TimeExceededError (source), req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			} else if (req.type == 4) {
 				req.callback (new ParameterProblemError (source), req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			} else if (req.type == 129) {
 				req.callback (null, req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			} else {
 				req.callback (new Error ("Unknown response type '" + req.type
 						+ "' (source=" + source + ")"), req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			}
 		} else {
 			if (req.type == 0) {
 				req.callback (null, req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			} else if (req.type == 3) {
 				req.callback (new DestinationUnreachableError (source), req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			} else if (req.type == 4) {
 				req.callback (new SourceQuenchError (source), req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			} else if (req.type == 5) {
 				req.callback (new RedirectReceivedError (source), req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			} else if (req.type == 11) {
 				req.callback (new TimeExceededError (source), req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			} else {
 				req.callback (new Error ("Unknown response type '" + req.type
 						+ "' (source=" + source + ")"), req.target,
-						req.sent, new Date ());
+						req.sent, deltaMs ());
 			}
 		}
 	}
@@ -320,7 +332,7 @@ Session.prototype.onSocketMessage = function (buffer, source) {
 
 Session.prototype.onSocketSend = function (req, error, bytes) {
 	if (! req.sent)
-		req.sent = new Date ();
+		req.sent = deltaMs ();
 	if (error) {
 		this.reqRemove (req.id);
 		req.callback (error, req.target, req.sent, req.sent);
@@ -337,7 +349,7 @@ Session.prototype.onTimeout = function (req) {
 	} else {
 		this.reqRemove (req.id);
 		req.callback (new RequestTimedOutError ("Request timed out"),
-				req.target, req.sent, new Date ());
+				req.target, req.sent, deltaMs ());
 	}
 };
 
@@ -511,7 +523,7 @@ Session.prototype.traceRoute = function (target, ttlOrOptions, feedCallback,
 
 	var id = this._generateId ();
 	if (! id) {
-		var sent = new Date ();
+		var sent = deltaMs ();
 		doneCallback (new Error ("Too many requests outstanding"), target,
 				sent, sent);
 		return this;

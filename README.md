@@ -1,3 +1,6 @@
+# net-ping-hr
+
+Fork of net-ping, replacing the use of Date() with custom deltaMs() function. The deltaMs() function relies on process.hrtime() and is therefore not a reliable source of clock time, but it serves well as a high resolution timer to calculate elapsed time with greater precision.
 
 # net-ping
 
@@ -90,9 +93,10 @@ specifies how big ICMP echo request packets should be:
 
 # Round Trip Times
 
-Some callbacks used by methods exposed by this module provide two instances of
-the JavaScript `Date` class specifying when the first ping was sent for a
-request, and when a request completed.
+Some callbacks used by methods exposed by this module provide two numbers (derived
+from process.hrtime) specifying when the first ping was sent for a request,
+and when a request completed, in millseconds. The absolute values are not useful
+but the difference between the 2 gives the round trip time in milliseconds.
 
 These parameters are typically named `sent` and `rcvd`, and are provided to
 help round trip time calculation.
@@ -258,10 +262,10 @@ following arguments will be passed to the `callback` function:
    error occurred
  * `target` - The target parameter as specified in the request
    still be the target host and NOT the responding gateway
- * `sent` - An instance of the `Date` class specifying when the first ping
+ * `sent` - A number (in milliseconds) specifying when the first ping
    was sent for this request (refer to the Round Trip Time section for more
    information)
- * `rcvd` - An instance of the `Date` class specifying when the request
+ * `rcvd` - A number (in milliseconds) specifying when the request
    completed (refer to the Round Trip Time section for more information)
 
 The following example sends a ping request to a remote host:
@@ -316,10 +320,10 @@ received or a time out occurs. The following arguments will be passed to the
    error occurred
  * `target` - The target parameter as specified in the request
  * `ttl` - The time to live used in the request which triggered this respinse
- * `sent` - An instance of the `Date` class specifying when the first ping
+ * `sent` - A number (in milliseconds) class specifying when the first ping
    was sent for this request (refer to the Round Trip Time section for more
    information)
- * `rcvd` - An instance of the `Date` class specifying when the request
+ * `rcvd` - A number (in milliseconds) class specifying when the request
    completed (refer to the Round Trip Time section for more information)
 
 Once a ping response has been received from the target, or more than three
